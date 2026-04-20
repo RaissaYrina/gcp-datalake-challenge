@@ -1,0 +1,10 @@
+# Credenciais GCP — NUNCA suba isso
+*.json
+service-account-key.json
+credentials/
+
+# Python
+__pycache__/
+*.pyc
+.env
+venv/
