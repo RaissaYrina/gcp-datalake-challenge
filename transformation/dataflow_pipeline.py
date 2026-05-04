@@ -1,6 +1,8 @@
 import os
 import requests
 import json
+import time
+import pytz
 from datetime import datetime
 from google.cloud import storage, bigquery
 from dotenv import load_dotenv
@@ -57,15 +59,21 @@ def transform_weather(weather_records: list, cities_records: list) -> list:
     transformed = []
     for record in weather_records:
         try:
-            city_name = record['name'].lower()
+            city_name = record["name"].lower()
             city_meta = cities_dict.get(city_name, {})
-
-            # Dados de temperatura
+            
             temp = record["main"]["temp"]
             temp_min_alerta = city_meta.get("temp_min_alerta", 0)
             temp_max_alerta = city_meta.get("temp_max_alerta", 40)
             umidade = record["main"]["humidity"]
             umidade_max_alerta = city_meta.get("umidade_max_alerta", 90)
+            
+            # Define timezone ANTES do dicionário
+            tz_brasilia = pytz.timezone("America/Sao_Paulo")
+            extraction_timestamp = datetime.strptime(
+                record.get("_extraction_timestamp"),
+                "%Y-%m-%d_%H-%M-%S"
+            ).replace(tzinfo=tz_brasilia)
 
             transformed.append({
                 # Identificação
@@ -94,9 +102,9 @@ def transform_weather(weather_records: list, cities_records: list) -> list:
                 "alerta_umidade": umidade > umidade_max_alerta,
 
                 # Controle
-                "timestamp_extracao": datetime.utcnow().isoformat(),
-                "data_particao": datetime.utcnow().strftime("%Y-%m-%d")
-            })
+                "timestamp_extracao": extraction_timestamp.strftime("%Y-%m-%d %H:%M:%S"),
+                "data_particao": extraction_timestamp.strftime("%Y-%m-%d"),
+                })
         except Exception as e:
             print(f"Erro ao transformar {record.get('name', 'desconhecida')}: {e}")
     
@@ -129,7 +137,7 @@ def save_to_silver(data: list):
         bigquery.SchemaField("alerta_temp_baixa", "BOOLEAN"),
         bigquery.SchemaField("alerta_temp_alta", "BOOLEAN"),
         bigquery.SchemaField("alerta_umidade", "BOOLEAN"),
-        bigquery.SchemaField("timestamp_extracao", "TIMESTAMP"),
+        bigquery.SchemaField("timestamp_extracao", "STRING"),
         bigquery.SchemaField("data_particao", "DATE"),
     ]
 
@@ -141,6 +149,7 @@ def save_to_silver(data: list):
         table = bigquery.Table(table_id, schema=schema)
         client.create_table(table)
         print(f"Tabela {table_id} criada!")
+        time.sleep(15)
 
     # Insere os dados
     errors = client.insert_rows_json(table_id, data)
