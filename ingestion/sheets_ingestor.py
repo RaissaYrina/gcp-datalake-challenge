@@ -1,5 +1,6 @@
 import os
 import json
+import pytz
 from datetime import datetime
 from google.cloud import storage
 from dotenv import load_dotenv
@@ -40,7 +41,8 @@ def save_to_bronze(data: list) -> str:
     client = storage.Client()
     bucket = client.bucket(BUCKET_NAME)
 
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    tz_brasilia = pytz.timezone("America/Sao_Paulo")
+    timestamp = datetime.now(tz_brasilia).strftime("%Y-%m-%d_%H-%M-%S")
     blob_path = f"bronze/cities/{timestamp}.json"
 
     blob = bucket.blob(blob_path)

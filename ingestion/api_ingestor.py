@@ -1,9 +1,11 @@
 import os
 import json
 import requests
+import pytz
 from datetime import datetime
 from google.cloud import storage
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -31,7 +33,8 @@ def save_to_bronze(data: dict, city: str) -> str:
     bucket = client.bucket(BUCKET_NAME)
 
     #Organiza por cidade e data
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    tz_brasilia = pytz.timezone("America/Sao_Paulo")
+    timestamp = datetime.now(tz_brasilia).strftime("%Y-%m-%d_%H-%M-%S")
     city_clean = city.strip().lower().replace(" ","_")
     blob_path = f"bronze/weather/{city_clean}/{timestamp}.json"
 
