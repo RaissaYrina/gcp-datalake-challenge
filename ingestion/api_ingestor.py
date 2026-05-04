@@ -12,7 +12,7 @@ load_dotenv()
 #Variaveris de ambiente
 API_KEY = os.getenv("OPENWEATHER_API_KEY")
 BUCKET_NAME = os.getenv("GCP_BUCKET_NAME")
-CITIES = os.getenv("CITIES").split(",")
+CITIES = os.getenv("CITIES").split(";")
 
 def fetch_weather(city: str) -> dict:
     """Busca dados de clima da API OpenWeather para uma cidade."""
